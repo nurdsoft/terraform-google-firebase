@@ -1,152 +1,107 @@
-# Google Firebase Terraform module
+# Google Firebase Terraform Module
 
-Terraform module which creates and manages irebase resources on top of an existing GCP project.
+Terraform module for managing Firebase resources on top of an existing GCP project.
 
----
+## What This Module Supports
+
+- Initializing Firebase on an existing GCP project
+- Firebase Authentication configuration
+- Firestore databases and documents
+- Firebase Storage bucket linking
+- Firebase Rules ruleset and release management
+- Multiple Firebase iOS app registrations
+- Multiple Firebase Android app registrations
+- Firebase mobile app config artifact retrieval
+
+## Existing Project Requirement
+
+This module does not create a GCP project. You must pass an existing project ID via project_id.
 
 ## Usage
-
-### Firestore Database
 
 ```hcl
 module "firebase" {
   source     = "../../"
-  project_id = "project-id"
+  project_id = "existing-firebase-project-id"
+  fetch_mobile_app_config = true
 
-  firestore_config = {
-    databases = [
-      {
-        id               = "(default)"
-        location         = "nam5"
-        type             = "FIRESTORE_NATIVE"
-        concurrency_mode = "PESSIMISTIC"
-        app_engine_mode  = "DISABLED"
-
-        documents = [
-          {
-            collection  = "users"
-            document_id = "user1"
-            fields      = { name = "Alice", role = "admin" }
-
-            subdocs = [
-              {
-                collection  = "devices"
-                document_id = "device1"
-                fields      = { os = "android", version = "13" }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-
-  firebase_storage = [
+  firebase_ios_apps = [
     {
-      name     = "my-firebase-bucket"
-      location = "US"
-      labels   = { env = "dev" }
-    }
-  ]
-
-  firebase_rules = [
-    {
-      id      = "firestore-inline-rules"
-      content = <<EOT
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-EOT
+      display_name = "My iOS App"
+      bundle_id    = "com.example.ios"
     },
     {
-      id        = "firestore-file-rules"
-      file_path = "${path.module}/firestore.rules"
+      display_name = "My iOS App Staging"
+      bundle_id    = "com.example.ios.staging"
+      team_id      = "ABCDE12345"
     }
   ]
 
-  firebase_auth = {
-    enabled_providers      = ["EMAIL"]
-    allow_duplicate_emails = false
-    password_policy = {
-      min_length = 8
+  firebase_android_apps = [
+    {
+      display_name = "My Android App"
+      package_name = "com.example.android"
+    },
+    {
+      display_name  = "My Android App Staging"
+      package_name  = "com.example.android.staging"
+      sha1_hashes   = ["2145bdf698b8715039bd0e83f2069bed435ac21c"]
+      sha256_hashes = ["2145bdf698b8715039bd0e83f2069bed435ac21ca1b2c3d4e5f6123456789abc"]
     }
-  }
+  ]
 }
 ```
 
----
+## Inputs (New Mobile App Options)
 
-## Examples 
+- project_id (string, required): Existing GCP project ID.
+- fetch_mobile_app_config (bool, optional): Defaults to false. When true, app config artifacts are fetched and populated in config outputs.
+- firebase_ios_apps (list(object), optional): iOS apps to create.
+  - display_name (required)
+  - bundle_id (required, unique)
+  - app_store_id (optional)
+  - team_id (optional)
+  - deletion_policy (optional, default DELETE, allowed: DELETE or ABANDON)
+- firebase_android_apps (list(object), optional): Android apps to create.
+  - display_name (required)
+  - package_name (required, unique)
+  - sha1_hashes (optional)
+  - sha256_hashes (optional)
+  - deletion_policy (optional, default DELETE, allowed: DELETE or ABANDON)
 
-- [firestore database](https://github.com/nurdsoft/terraform-google-firebase/tree/main/examples/firestore) - Example showing how to provision a **Firestore database**, including attaching Firebase security rules.  
+## Outputs (New Mobile App Outputs)
 
----
+- ios_apps: Map of created iOS apps keyed by bundle ID.
+- android_apps: Map of created Android apps keyed by package name.
+- ios_app_config: Map of iOS config artifacts (sensitive, base64 config content). Empty map when fetch_mobile_app_config is false.
+- android_app_config: Map of Android config artifacts (sensitive, base64 config content). Empty map when fetch_mobile_app_config is false.
 
-<!-- BEGIN_TF_DOCS -->
-## Requirements
+## Provider Support Validation
 
-| Name        | Version |
-| ----------- | ------- |
-| terraform   | >= 1.5  |
-| google      | ~> 6.0  |
-| google-beta | ~> 6.0  |
+The mobile app functionality uses provider-supported Firebase resources and data sources:
 
-## Providers
+- google_firebase_apple_app
+- google_firebase_android_app
+- google_firebase_apple_app_config (data source)
+- google_firebase_android_app_config (data source)
 
-| Name        | Version |
-| ----------- | ------- |
-| Google      | ~> 6.0  | 
-| Google-beta | ~> 6.0  |
+These Firebase app endpoints are beta-backed in provider documentation, so this module uses google-beta for app creation and app config retrieval.
 
-## Modules
+## Known Limitations and Requirements
 
-No modules.
+- Firebase app config outputs contain base64-encoded bootstrap credentials; they are marked sensitive.
+- This module does not manage API key resources for mobile apps.
+- The module enables required APIs and initializes Firebase, but it assumes the caller has sufficient IAM permissions.
 
-## Resources
+## Remote State / Backend Guidance
 
-| Name | Type |
-|------|------|
-| [google_project_service.required_apis](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
-| [google_firebase_project.this](https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_project) | resource |
-| [google_identity_platform_config.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/identity_platform_config) | resource |
-| [google_firestore_database.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_database) | resource |
-| [google_firestore_document.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_document) | resource |
-| [google_firestore_document.subdocs](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_document) | resource |
-| [google_storage_bucket.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
-| [google_firebase_storage_bucket.this](https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_storage_bucket) | resource |
-| [google_firebaserules_ruleset.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebaserules_ruleset) | resource |
-| [google_firebaserules_release.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebaserules_release) | resource |
+This module intentionally does not define a backend block. Configure remote state in your root module (for example, a GCS backend) per environment.
 
-## Inputs
+## Examples
 
-| Name               | Type             | Default | Description                                                                      |
-| ------------------ | ---------------- | ------- | -------------------------------------------------------------------------------- |
-| `project_id`       | `string`         | n/a     | **Required.** The GCP Project ID with Firebase enabled.                          |
-| `firestore_config` | `list(object)`   | `null`  | Firestore configuration including databases, documents, and subdocuments.        |
-| `firebase_storage` | `list(object)`   | `[]`    | List of Firebase Cloud Storage buckets to create and link.                       |
-| `firebase_rules`   | `list(object)`   | `[]`    | Firebase security rulesets (inline or file-based).                               |
-| `firebase_auth`    | `object`         | `null`  | Firebase Authentication configuration. If `null`, authentication is not managed. |
-
-### Outputs
-
-| Name       | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| `project_id` | Project ID using the string patter `projects/{{project_id}}` |
-<!-- END_TF_DOCS -->
-
----
-
-## Authors
-
-Module is maintained by [Nurdsoft](https://github.com/nurdsoft).
-
----
+- examples/firestore: Firestore + rules example
+- examples/mobile-apps: Multiple iOS and Android app example
 
 ## License
 
-Apache 2 Licensed. See [LICENSE](https://github.com/nurdsoft/terraform-google-firebase/tree/main/LICENSE) for full details.
+Apache 2. See LICENSE.
