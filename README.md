@@ -91,13 +91,13 @@ module "firebase" {
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
 | project_id | string | n/a | Existing GCP project ID where Firebase resources are managed. |
-| firebase_auth | object({ enabled_providers = optional(list(string), []), allow_duplicate_emails = optional(bool, false), phone_test_numbers = optional(map(string), {}) }) | null | Optional Firebase Authentication configuration. |
-| firestore_config | object({ databases = optional(list(object({ id = string, location = string, type = optional(string, "FIRESTORE_NATIVE"), concurrency_mode = optional(string, "PESSIMISTIC"), app_engine_mode = optional(string, "DISABLED"), documents = optional(list(object({ collection = string, document_id = string, fields = map(any), subdocs = optional(list(object({ collection = string, document_id = string, fields = map(any) })), []) })), []) })), []) }) | {} | Optional Firestore databases and documents configuration. |
-| firebase_storage | list(object({ name = string, location = string, labels = optional(map(string), {}) })) | [] | Optional Firebase Storage bucket definitions. |
-| firebase_rules | list(object({ id = string, name = optional(string, ""), language = optional(string, ""), content = optional(string, ""), fingerprint = optional(string, "") })) | [] | Optional Firebase rules definitions. |
+| firebase_auth | object | null | Optional Firebase Authentication configuration (providers, duplicate email behavior, test phone numbers). |
+| firestore_config | object | {} | Optional Firestore configuration (databases, root documents, and nested subdocuments). |
+| firebase_storage | list(object) | [] | Optional Firebase Storage bucket definitions (name, location, labels). |
+| firebase_rules | list(object) | [] | Optional Firebase rules definitions (id, name, language, content, fingerprint). |
 | fetch_mobile_app_config | bool | false | Whether to fetch iOS/Android app config artifacts after app creation. |
-| firebase_ios_apps | list(object({ display_name = string, bundle_id = string, app_store_id = optional(string), team_id = optional(string), deletion_policy = optional(string, "DELETE") })) | [] | Optional list of Firebase iOS apps. bundle_id values must be unique. |
-| firebase_android_apps | list(object({ display_name = string, package_name = string, sha1_hashes = optional(list(string), []), sha256_hashes = optional(list(string), []), deletion_policy = optional(string, "DELETE") })) | [] | Optional list of Firebase Android apps. package_name values must be unique. |
+| firebase_ios_apps | list(object) | [] | Optional list of Firebase iOS apps (display_name, bundle_id, optional app_store_id/team_id/deletion_policy). bundle_id values must be unique. |
+| firebase_android_apps | list(object) | [] | Optional list of Firebase Android apps (display_name, package_name, optional sha1_hashes/sha256_hashes/deletion_policy). package_name values must be unique. |
 
 ## Outputs
 
@@ -108,32 +108,6 @@ module "firebase" {
 | android_apps | Map of created Firebase Android apps keyed by package name. | No |
 | ios_app_config | Map of iOS app config artifacts keyed by bundle ID (base64 config content). Empty map when fetch_mobile_app_config is false. | Yes |
 | android_app_config | Map of Android app config artifacts keyed by package name (base64 config content). Empty map when fetch_mobile_app_config is false. | Yes |
-
-## Provider Support Validation
-
-The mobile app functionality uses provider-supported Firebase resources and data sources:
-
-- google_firebase_apple_app
-- google_firebase_android_app
-- google_firebase_apple_app_config (data source)
-- google_firebase_android_app_config (data source)
-
-These Firebase app endpoints are beta-backed in provider documentation, so this module uses google-beta for app creation and app config retrieval.
-
-## Known Limitations and Requirements
-
-- Firebase app config outputs contain base64-encoded bootstrap credentials; they are marked sensitive.
-- This module does not manage API key resources for mobile apps.
-- The module enables required APIs and initializes Firebase, but it assumes the caller has sufficient IAM permissions.
-
-## Remote State / Backend Guidance
-
-This module intentionally does not define a backend block. Configure remote state in your root module (for example, a GCS backend) per environment.
-
-## Examples
-
-- examples/firestore: Firestore + rules example
-- examples/mobile-apps: Multiple iOS and Android app example
 
 ## License
 
