@@ -52,29 +52,62 @@ module "firebase" {
 }
 ```
 
-## Inputs (New Mobile App Options)
+## Requirements
 
-- project_id (string, required): Existing GCP project ID.
-- fetch_mobile_app_config (bool, optional): Defaults to false. When true, app config artifacts are fetched and populated in config outputs.
-- firebase_ios_apps (list(object), optional): iOS apps to create.
-  - display_name (required)
-  - bundle_id (required, unique)
-  - app_store_id (optional)
-  - team_id (optional)
-  - deletion_policy (optional, default DELETE, allowed: DELETE or ABANDON)
-- firebase_android_apps (list(object), optional): Android apps to create.
-  - display_name (required)
-  - package_name (required, unique)
-  - sha1_hashes (optional)
-  - sha256_hashes (optional)
-  - deletion_policy (optional, default DELETE, allowed: DELETE or ABANDON)
+| Name | Version |
+|------|---------|
+| google | ~> 6.0 |
+| google-beta | ~> 6.0 |
 
-## Outputs (New Mobile App Outputs)
+## Providers
 
-- ios_apps: Map of created iOS apps keyed by bundle ID.
-- android_apps: Map of created Android apps keyed by package name.
-- ios_app_config: Map of iOS config artifacts (sensitive, base64 config content). Empty map when fetch_mobile_app_config is false.
-- android_app_config: Map of Android config artifacts (sensitive, base64 config content). Empty map when fetch_mobile_app_config is false.
+| Name | Alias | Notes |
+|------|-------|-------|
+| google | no_user_project_override | Used for API enablement with user project override disabled |
+| google | default | Used for GA resources |
+| google-beta | default | Used for Firebase beta-backed resources/data sources |
+
+## Resources
+
+| Name | Type |
+|------|------|
+| google_project_service.required_apis | resource |
+| google_firebase_project.this | resource |
+| google_firebase_apple_app.this | resource |
+| google_firebase_android_app.this | resource |
+| google_identity_platform_config.this | resource |
+| google_firestore_database.this | resource |
+| google_firestore_document.this | resource |
+| google_firestore_document.subdocs | resource |
+| google_storage_bucket.this | resource |
+| google_firebase_storage_bucket.this | resource |
+| google_firebaserules_ruleset.this | resource |
+| google_firebaserules_release.this | resource |
+| google_firebase_apple_app_config.this | data source |
+| google_firebase_android_app_config.this | data source |
+
+## Inputs
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| project_id | string | n/a | Existing GCP project ID where Firebase resources are managed. |
+| firebase_auth | object({ enabled_providers = optional(list(string), []), allow_duplicate_emails = optional(bool, false), phone_test_numbers = optional(map(string), {}) }) | null | Optional Firebase Authentication configuration. |
+| firestore_config | object({ databases = optional(list(object({ id = string, location = string, type = optional(string, "FIRESTORE_NATIVE"), concurrency_mode = optional(string, "PESSIMISTIC"), app_engine_mode = optional(string, "DISABLED"), documents = optional(list(object({ collection = string, document_id = string, fields = map(any), subdocs = optional(list(object({ collection = string, document_id = string, fields = map(any) })), []) })), []) })), []) }) | {} | Optional Firestore databases and documents configuration. |
+| firebase_storage | list(object({ name = string, location = string, labels = optional(map(string), {}) })) | [] | Optional Firebase Storage bucket definitions. |
+| firebase_rules | list(object({ id = string, name = optional(string, ""), language = optional(string, ""), content = optional(string, ""), fingerprint = optional(string, "") })) | [] | Optional Firebase rules definitions. |
+| fetch_mobile_app_config | bool | false | Whether to fetch iOS/Android app config artifacts after app creation. |
+| firebase_ios_apps | list(object({ display_name = string, bundle_id = string, app_store_id = optional(string), team_id = optional(string), deletion_policy = optional(string, "DELETE") })) | [] | Optional list of Firebase iOS apps. bundle_id values must be unique. |
+| firebase_android_apps | list(object({ display_name = string, package_name = string, sha1_hashes = optional(list(string), []), sha256_hashes = optional(list(string), []), deletion_policy = optional(string, "DELETE") })) | [] | Optional list of Firebase Android apps. package_name values must be unique. |
+
+## Outputs
+
+| Name | Description | Sensitive |
+|------|-------------|-----------|
+| project_id | Project ID in projects/{{project_id}} format. | No |
+| ios_apps | Map of created Firebase iOS apps keyed by bundle ID. | No |
+| android_apps | Map of created Firebase Android apps keyed by package name. | No |
+| ios_app_config | Map of iOS app config artifacts keyed by bundle ID (base64 config content). Empty map when fetch_mobile_app_config is false. | Yes |
+| android_app_config | Map of Android app config artifacts keyed by package name (base64 config content). Empty map when fetch_mobile_app_config is false. | Yes |
 
 ## Provider Support Validation
 
