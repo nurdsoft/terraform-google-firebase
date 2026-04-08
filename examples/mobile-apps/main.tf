@@ -1,5 +1,6 @@
 module "firebase_mobile_apps" {
-  source                  = "../../"
+  source  = "nurdsoft/firebase/google"
+  version = "1.1.0"
   project_id              = "existing-firebase-project-id"
   fetch_mobile_app_config = true
 
