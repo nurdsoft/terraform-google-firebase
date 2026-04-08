@@ -1,6 +1,5 @@
 module "firebase_mobile_apps" {
-  source  = "nurdsoft/firebase/google"
-  version = "1.1.0"
+  source  = "git::https://github.com/nurdsoft/terraform-google-firebase.git?ref=v1.1.0"
   project_id              = "existing-firebase-project-id"
   fetch_mobile_app_config = true
 
