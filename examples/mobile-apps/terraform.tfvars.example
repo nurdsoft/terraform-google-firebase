@@ -1,0 +1,10 @@
+# Copy this file to terraform.tfvars and set real certificate fingerprints.
+# Leave lists empty if you do not want to register certificate hashes yet.
+
+android_staging_sha1_hashes = [
+  "REPLACE_WITH_REAL_SHA1_FINGERPRINT"
+]
+
+android_staging_sha256_hashes = [
+  "REPLACE_WITH_REAL_SHA256_FINGERPRINT"
+]

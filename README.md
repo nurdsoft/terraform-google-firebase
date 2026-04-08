@@ -45,8 +45,8 @@ module "firebase" {
     {
       display_name  = "My Android App Staging"
       package_name  = "com.example.android.staging"
-      sha1_hashes   = ["2145bdf698b8715039bd0e83f2069bed435ac21c"]
-      sha256_hashes = ["2145bdf698b8715039bd0e83f2069bed435ac21ca1b2c3d4e5f6123456789abc"]
+      sha1_hashes   = var.android_staging_sha1_hashes
+      sha256_hashes = var.android_staging_sha256_hashes
     }
   ]
 }
