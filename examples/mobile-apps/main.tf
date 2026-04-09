@@ -1,5 +1,5 @@
 module "firebase_mobile_apps" {
-  source  = "git::https://github.com/nurdsoft/terraform-google-firebase.git?ref=v1.1.0"
+  source                  = "git::https://github.com/nurdsoft/terraform-google-firebase.git?ref=v1.1.0"
   project_id              = "existing-firebase-project-id"
   fetch_mobile_app_config = true
 
@@ -27,22 +27,4 @@ module "firebase_mobile_apps" {
       sha256_hashes = var.android_staging_sha256_hashes
     }
   ]
-}
-
-output "ios_apps" {
-  value = module.firebase_mobile_apps.ios_apps
-}
-
-output "android_apps" {
-  value = module.firebase_mobile_apps.android_apps
-}
-
-output "ios_app_config" {
-  value     = module.firebase_mobile_apps.ios_app_config
-  sensitive = true
-}
-
-output "android_app_config" {
-  value     = module.firebase_mobile_apps.android_app_config
-  sensitive = true
 }
