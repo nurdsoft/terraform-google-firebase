@@ -12,13 +12,13 @@ terraform {
 }
 
 provider "google" {
-  alias = "no_user_project_override"
+  alias                 = "no_user_project_override"
   user_project_override = false
 }
 
 provider "google" {
   user_project_override = true
-} 
+}
 
 provider "google-beta" {
   user_project_override = true

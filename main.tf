@@ -24,8 +24,57 @@ resource "google_firebase_project" "this" {
   depends_on = [google_project_service.required_apis]
 }
 
+## Firebase iOS Apps
+resource "google_firebase_apple_app" "this" {
+  provider = google-beta
+  for_each = local.ios_apps
+
+  project         = var.project_id
+  display_name    = each.value.display_name
+  bundle_id       = each.value.bundle_id
+  app_store_id    = try(each.value.app_store_id, null)
+  team_id         = try(each.value.team_id, null)
+  deletion_policy = each.value.deletion_policy
+
+  depends_on = [google_firebase_project.this]
+}
+
+## Firebase Android Apps
+resource "google_firebase_android_app" "this" {
+  provider = google-beta
+  for_each = local.android_apps
+
+  project         = var.project_id
+  display_name    = each.value.display_name
+  package_name    = each.value.package_name
+  sha1_hashes     = each.value.sha1_hashes
+  sha256_hashes   = each.value.sha256_hashes
+  deletion_policy = each.value.deletion_policy
+
+  depends_on = [google_firebase_project.this]
+}
+
+## Firebase iOS App Config
+data "google_firebase_apple_app_config" "this" {
+  provider = google-beta
+  for_each = var.fetch_mobile_app_config ? google_firebase_apple_app.this : {}
+
+  project = var.project_id
+  app_id  = each.value.app_id
+}
+
+## Firebase Android App Config
+data "google_firebase_android_app_config" "this" {
+  provider = google-beta
+  for_each = var.fetch_mobile_app_config ? google_firebase_android_app.this : {}
+
+  project = var.project_id
+  app_id  = each.value.app_id
+}
+
 ## Firebase Authentication
 resource "google_identity_platform_config" "this" {
+  provider = google-beta
   count    = var.firebase_auth == null ? 0 : 1
   project  = var.project_id
 
@@ -52,8 +101,8 @@ resource "google_identity_platform_config" "this" {
 
 ## Firebase Firestore
 resource "google_firestore_database" "this" {
-  for_each = { 
-    for database in try(var.firestore_config.databases, []) : database.id => database 
+  for_each = {
+    for database in try(var.firestore_config.databases, []) : database.id => database
   }
 
   project                     = var.project_id
@@ -126,7 +175,7 @@ resource "google_firebase_storage_bucket" "this" {
 resource "google_firebaserules_ruleset" "this" {
   for_each = local.firebase_rules
 
-  project  = var.project_id
+  project = var.project_id
 
   source {
     files {

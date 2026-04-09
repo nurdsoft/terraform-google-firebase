@@ -1,152 +1,114 @@
-# Google Firebase Terraform module
+# Google Firebase Terraform Module
 
-Terraform module which creates and manages irebase resources on top of an existing GCP project.
+Terraform module for managing Firebase resources on top of an existing GCP project.
 
----
+## What This Module Supports
+
+- Initializing Firebase on an existing GCP project
+- Firebase Authentication configuration
+- Firestore databases and documents
+- Firebase Storage bucket linking
+- Firebase Rules ruleset and release management
+- Multiple Firebase iOS app registrations
+- Multiple Firebase Android app registrations
+- Firebase mobile app config artifact retrieval
+
+## Existing Project Requirement
+
+This module does not create a GCP project. You must pass an existing project ID via project_id.
 
 ## Usage
-
-### Firestore Database
 
 ```hcl
 module "firebase" {
   source     = "../../"
-  project_id = "project-id"
+  project_id = "existing-firebase-project-id"
+  fetch_mobile_app_config = true
 
-  firestore_config = {
-    databases = [
-      {
-        id               = "(default)"
-        location         = "nam5"
-        type             = "FIRESTORE_NATIVE"
-        concurrency_mode = "PESSIMISTIC"
-        app_engine_mode  = "DISABLED"
-
-        documents = [
-          {
-            collection  = "users"
-            document_id = "user1"
-            fields      = { name = "Alice", role = "admin" }
-
-            subdocs = [
-              {
-                collection  = "devices"
-                document_id = "device1"
-                fields      = { os = "android", version = "13" }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-
-  firebase_storage = [
+  firebase_ios_apps = [
     {
-      name     = "my-firebase-bucket"
-      location = "US"
-      labels   = { env = "dev" }
-    }
-  ]
-
-  firebase_rules = [
-    {
-      id      = "firestore-inline-rules"
-      content = <<EOT
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-EOT
+      display_name = "My iOS App"
+      bundle_id    = "com.example.ios"
     },
     {
-      id        = "firestore-file-rules"
-      file_path = "${path.module}/firestore.rules"
+      display_name = "My iOS App Staging"
+      bundle_id    = "com.example.ios.staging"
+      team_id      = "ABCDE12345"
     }
   ]
 
-  firebase_auth = {
-    enabled_providers      = ["EMAIL"]
-    allow_duplicate_emails = false
-    password_policy = {
-      min_length = 8
+  firebase_android_apps = [
+    {
+      display_name = "My Android App"
+      package_name = "com.example.android"
+    },
+    {
+      display_name  = "My Android App Staging"
+      package_name  = "com.example.android.staging"
+      sha1_hashes   = var.android_staging_sha1_hashes
+      sha256_hashes = var.android_staging_sha256_hashes
     }
-  }
+  ]
 }
 ```
 
----
-
-## Examples 
-
-- [firestore database](https://github.com/nurdsoft/terraform-google-firebase/tree/main/examples/firestore) - Example showing how to provision a **Firestore database**, including attaching Firebase security rules.  
-
----
-
-<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-| Name        | Version |
-| ----------- | ------- |
-| terraform   | >= 1.5  |
-| google      | ~> 6.0  |
-| google-beta | ~> 6.0  |
+| Name | Version |
+|------|---------|
+| google | ~> 6.0 |
+| google-beta | ~> 6.0 |
 
 ## Providers
 
-| Name        | Version |
-| ----------- | ------- |
-| Google      | ~> 6.0  | 
-| Google-beta | ~> 6.0  |
-
-## Modules
-
-No modules.
+| Name | Alias | Notes |
+|------|-------|-------|
+| google | no_user_project_override | Used for API enablement with user project override disabled |
+| google | default | Used for GA resources |
+| google-beta | default | Used for Firebase beta-backed resources/data sources |
 
 ## Resources
 
 | Name | Type |
 |------|------|
-| [google_project_service.required_apis](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
-| [google_firebase_project.this](https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_project) | resource |
-| [google_identity_platform_config.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/identity_platform_config) | resource |
-| [google_firestore_database.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_database) | resource |
-| [google_firestore_document.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_document) | resource |
-| [google_firestore_document.subdocs](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_document) | resource |
-| [google_storage_bucket.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
-| [google_firebase_storage_bucket.this](https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_storage_bucket) | resource |
-| [google_firebaserules_ruleset.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebaserules_ruleset) | resource |
-| [google_firebaserules_release.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebaserules_release) | resource |
+| google_project_service.required_apis | resource |
+| google_firebase_project.this | resource |
+| google_firebase_apple_app.this | resource |
+| google_firebase_android_app.this | resource |
+| google_identity_platform_config.this | resource |
+| google_firestore_database.this | resource |
+| google_firestore_document.this | resource |
+| google_firestore_document.subdocs | resource |
+| google_storage_bucket.this | resource |
+| google_firebase_storage_bucket.this | resource |
+| google_firebaserules_ruleset.this | resource |
+| google_firebaserules_release.this | resource |
+| google_firebase_apple_app_config.this | data source |
+| google_firebase_android_app_config.this | data source |
 
 ## Inputs
 
-| Name               | Type             | Default | Description                                                                      |
-| ------------------ | ---------------- | ------- | -------------------------------------------------------------------------------- |
-| `project_id`       | `string`         | n/a     | **Required.** The GCP Project ID with Firebase enabled.                          |
-| `firestore_config` | `list(object)`   | `null`  | Firestore configuration including databases, documents, and subdocuments.        |
-| `firebase_storage` | `list(object)`   | `[]`    | List of Firebase Cloud Storage buckets to create and link.                       |
-| `firebase_rules`   | `list(object)`   | `[]`    | Firebase security rulesets (inline or file-based).                               |
-| `firebase_auth`    | `object`         | `null`  | Firebase Authentication configuration. If `null`, authentication is not managed. |
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| project_id | string | n/a | Existing GCP project ID where Firebase resources are managed. |
+| firebase_auth | object | null | Optional Firebase Authentication configuration (providers, duplicate email behavior, test phone numbers). |
+| firestore_config | object | {} | Optional Firestore configuration (databases, root documents, and nested subdocuments). |
+| firebase_storage | list(object) | [] | Optional Firebase Storage bucket definitions (name, location, labels). |
+| firebase_rules | list(object) | [] | Optional Firebase rules definitions (id, name, language, content, fingerprint). |
+| fetch_mobile_app_config | bool | false | Whether to fetch iOS/Android app config artifacts after app creation. |
+| firebase_ios_apps | list(object) | [] | Optional list of Firebase iOS apps (display_name, bundle_id, optional app_store_id/team_id/deletion_policy). bundle_id values must be unique. |
+| firebase_android_apps | list(object) | [] | Optional list of Firebase Android apps (display_name, package_name, optional sha1_hashes/sha256_hashes/deletion_policy). package_name values must be unique. |
 
-### Outputs
+## Outputs
 
-| Name       | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| `project_id` | Project ID using the string patter `projects/{{project_id}}` |
-<!-- END_TF_DOCS -->
-
----
-
-## Authors
-
-Module is maintained by [Nurdsoft](https://github.com/nurdsoft).
-
----
+| Name | Description | Sensitive |
+|------|-------------|-----------|
+| project_id | Project ID in projects/{{project_id}} format. | No |
+| ios_apps | Map of created Firebase iOS apps keyed by bundle ID. | No |
+| android_apps | Map of created Firebase Android apps keyed by package name. | No |
+| ios_app_config | Map of iOS app config artifacts keyed by bundle ID (base64 config content). Empty map when fetch_mobile_app_config is false. | Yes |
+| android_app_config | Map of Android app config artifacts keyed by package name (base64 config content). Empty map when fetch_mobile_app_config is false. | Yes |
 
 ## License
 
-Apache 2 Licensed. See [LICENSE](https://github.com/nurdsoft/terraform-google-firebase/tree/main/LICENSE) for full details.
+Apache 2. See LICENSE.

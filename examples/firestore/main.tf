@@ -5,9 +5,9 @@ module "firestore" {
   firestore_config = {
     databases = [
       {
-        id       = "(default)"
-        location = "nam5"
-        type     = "FIRESTORE_NATIVE"
+        id               = "(default)"
+        location         = "nam5"
+        type             = "FIRESTORE_NATIVE"
         concurrency_mode = "PESSIMISTIC"
         app_engine_mode  = "DISABLED"
 

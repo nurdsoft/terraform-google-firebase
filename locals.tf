@@ -35,4 +35,14 @@ locals {
     for rule in var.firebase_rules :
     rule.id => rule
   }
+
+  ios_apps = {
+    for app in var.firebase_ios_apps :
+    app.bundle_id => app
+  }
+
+  android_apps = {
+    for app in var.firebase_android_apps :
+    app.package_name => app
+  }
 }
