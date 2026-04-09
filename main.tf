@@ -47,8 +47,8 @@ resource "google_firebase_android_app" "this" {
   project         = var.project_id
   display_name    = each.value.display_name
   package_name    = each.value.package_name
-  sha1_hashes     = try(each.value.sha1_hashes, [])
-  sha256_hashes   = try(each.value.sha256_hashes, [])
+  sha1_hashes     = each.value.sha1_hashes
+  sha256_hashes   = each.value.sha256_hashes
   deletion_policy = each.value.deletion_policy
 
   depends_on = [google_firebase_project.this]
@@ -61,8 +61,6 @@ data "google_firebase_apple_app_config" "this" {
 
   project = var.project_id
   app_id  = each.value.app_id
-
-  depends_on = [google_firebase_apple_app.this]
 }
 
 ## Firebase Android App Config
@@ -72,14 +70,13 @@ data "google_firebase_android_app_config" "this" {
 
   project = var.project_id
   app_id  = each.value.app_id
-
-  depends_on = [google_firebase_android_app.this]
 }
 
 ## Firebase Authentication
 resource "google_identity_platform_config" "this" {
-  count   = var.firebase_auth == null ? 0 : 1
-  project = var.project_id
+  provider = google-beta
+  count    = var.firebase_auth == null ? 0 : 1
+  project  = var.project_id
 
   multi_tenant {
     allow_tenants = false
